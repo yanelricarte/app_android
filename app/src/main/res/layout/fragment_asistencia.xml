@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout
+        android:orientation="vertical" android:padding="16dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etDniAsistencia"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="DNI" android:inputType="number" />
+
+        <Button
+            android:id="@+id/btnMarcar"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Marcar asistencia" />
+
+        <TextView
+            android:id="@+id/tvEstado"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Estado..." />
+
+        <Button
+            android:id="@+id/btnVer"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Ver últimas asistencias" android:layout_marginTop="12dp"/>
+
+        <TextView
+            android:id="@+id/tvLista"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Lista..." />
+    </LinearLayout>
+</ScrollView>
