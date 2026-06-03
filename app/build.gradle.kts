@@ -15,39 +15,52 @@ android {
         versionName = "1.0"
     }
 
+    buildTypes {
+        debug {
+            // URL del backend; en emulador 10.0.2.2 apunta al localhost de la PC.
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2/api/\"")
+        }
+        release {
+            isMinifyEnabled = false
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2/api/\"")
+        }
+    }
+
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    // 👇 aseguramos Kotlin 17
     kotlinOptions {
         jvmTarget = "17"
     }
-    // (alternativa moderna)
-    // kotlin { jvmToolchain(17) }
 }
 
 dependencies {
-    // Retrofit + Gson
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-
-    // OkHttp (BOM) + logging
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
-    implementation("com.squareup.okhttp3:okhttp")
-    implementation("com.squareup.okhttp3:logging-interceptor")
-
     // UI base
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.fragment.ktx)
 
-    // Necesarios para usar coroutines y lifecycleScope en Activities/Fragments
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
+    // Arquitectura (MVVM) + coroutines
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Red: Retrofit + Gson + OkHttp
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(platform(libs.okhttp.bom))
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
 }

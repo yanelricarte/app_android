@@ -6,18 +6,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import ar.edu.gymdemo.data.dto.Socio
-import ar.edu.gymdemo.data.remote.RetrofitClient
 import ar.edu.gymdemo.databinding.FragmentDatosBinding
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class DatosFragment : Fragment() {
 
     private var _b: FragmentDatosBinding? = null
     private val b get() = _b!!
+    private val vm: DatosViewModel by viewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _b = FragmentDatosBinding.inflate(inflater, container, false)
@@ -25,48 +26,54 @@ class DatosFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        b.btnCargar.setOnClickListener { cargarSocios() }
+        b.btnCargar.setOnClickListener { vm.cargarSocios() }
         b.btnBuscarPorDni.setOnClickListener {
             val dni = b.etDni.text.toString().trim()
-            if (dni.isEmpty()) Toast.makeText(requireContext(), "Ingresá un DNI", Toast.LENGTH_SHORT).show()
-            else consultarEstadoSocio(dni)
+            if (dni.isEmpty()) toast("Ingresá un DNI") else vm.consultarEstado(dni)
         }
+        observarEstados()
     }
 
-    private fun cargarSocios() {
+    private fun observarEstados() {
         viewLifecycleOwner.lifecycleScope.launch {
-            b.txtResultado.text = "Cargando..."
-            try {
-                val response = withContext(Dispatchers.IO) { RetrofitClient.api.getSocios() }
-                val socios = response.items // tu /clientes devuelve {items:[...]}
-
-                b.txtResultado.text = if (socios.isEmpty()) "No se encontraron socios."
-                else socios.joinToString("\n") { s: Socio ->
-                    "• ${s.nombre} (Vence: ${s.membresia_vence})"
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    vm.socios.collect { state ->
+                        when (state) {
+                            is UiState.Idle -> Unit
+                            is UiState.Loading -> b.txtResultado.text = "Cargando..."
+                            is UiState.Success -> b.txtResultado.text =
+                                if (state.data.isEmpty()) "No se encontraron socios."
+                                else state.data.joinToString("\n") { s: Socio ->
+                                    "• ${s.nombre} (Vence: ${s.membresiaVence})"
+                                }
+                            is UiState.Error -> b.txtResultado.text = state.message
+                        }
+                    }
                 }
-            } catch (e: Exception) {
-                b.txtResultado.text = "Error al cargar: ${e.message}"
+                launch {
+                    vm.estado.collect { state ->
+                        when (state) {
+                            is UiState.Idle -> Unit
+                            is UiState.Loading -> b.txtResultadoIndividual.text = "Buscando..."
+                            is UiState.Success -> {
+                                val r = state.data
+                                b.txtResultadoIndividual.text = """
+                                    Nombre: ${r.nombre}
+                                    Vence: ${r.vence}
+                                    Días restantes: ${r.diasRestantes}
+                                    Estado: ${if (r.activa) "Activa" else "Vencida"}
+                                """.trimIndent()
+                            }
+                            is UiState.Error -> b.txtResultadoIndividual.text = state.message
+                        }
+                    }
+                }
             }
         }
     }
 
-    private fun consultarEstadoSocio(dni: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            b.txtResultadoIndividual.text = "Buscando..."
-            try {
-                val r = withContext(Dispatchers.IO) { RetrofitClient.api.getEstadoSocio(dni) }
-                val estado = if (r.activa) "Activa" else "Vencida"
-                b.txtResultadoIndividual.text = """
-                    Nombre: ${r.nombre}
-                    Vence: ${r.vence}
-                    Días restantes: ${r.dias_restantes}
-                    Estado: $estado
-                """.trimIndent()
-            } catch (e: Exception) {
-                b.txtResultadoIndividual.text = "Error: ${e.message}"
-            }
-        }
-    }
+    private fun toast(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
 
     override fun onDestroyView() {
         super.onDestroyView()

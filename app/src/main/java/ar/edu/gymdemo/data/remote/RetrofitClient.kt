@@ -1,5 +1,6 @@
 package ar.edu.gymdemo.data.remote
 
+import ar.edu.gymdemo.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -8,10 +9,10 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2/api/" // emulador; en dispositivo: http://IP-PC/api/
-
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        // Solo loguea cuerpos en debug; en release no se filtran datos.
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+        else HttpLoggingInterceptor.Level.NONE
     }
 
     private val http = OkHttpClient.Builder()
@@ -21,10 +22,9 @@ object RetrofitClient {
         .addInterceptor(logging)
         .build()
 
-    // 👇 Asegurate de que importe y vea GymApi del MISMO paquete
     val api: GymApi by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL) // configurable por buildType, no hardcodeada
             .client(http)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
